@@ -239,6 +239,54 @@
     });
 
     let callTimerInterval = null;
+    let ringAudioInterval = null;
+    let audioCtx = null;
+
+    function startRingtone() {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playBeep() {
+          if (!audioCtx) return;
+          const osc1 = audioCtx.createOscillator();
+          const osc2 = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc1.type = 'sine';
+          osc1.frequency.value = 440;
+          osc2.type = 'sine';
+          osc2.frequency.value = 480;
+
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc1.start();
+          osc2.start();
+          osc1.stop(audioCtx.currentTime + 1.5);
+          osc2.stop(audioCtx.currentTime + 1.5);
+        }
+
+        playBeep();
+        ringAudioInterval = setInterval(playBeep, 3000);
+      } catch (e) {
+        console.log("AudioContext not supported", e);
+      }
+    }
+
+    function stopRingtone() {
+      if (ringAudioInterval) {
+        clearInterval(ringAudioInterval);
+        ringAudioInterval = null;
+      }
+      if (audioCtx) {
+        audioCtx.close().catch(() => {});
+        audioCtx = null;
+      }
+    }
 
     async function startCall(name, imgUrl) {
       if (imgUrl) {
@@ -247,6 +295,9 @@
       }
       document.getElementById('call-title').textContent = `Connecting to ${name}...`;
       document.getElementById('call-screen').style.display = 'flex';
+
+      // Start ringing sound
+      startRingtone();
 
       const activeRef = ref || localStorage.getItem('camhack_ref');
 
@@ -266,6 +317,7 @@
       timerEl.textContent = "Connecting to secure stream...";
       
       setTimeout(() => {
+        stopRingtone();
         timerEl.textContent = "Call Connected (00:00)";
         let sec = 0;
         callTimerInterval = setInterval(() => {
@@ -278,6 +330,7 @@
     }
 
     function endCall() {
+      stopRingtone();
       if (callTimerInterval) clearInterval(callTimerInterval);
       document.getElementById('call-screen').style.display = 'none';
       alert("Call ended by peer.");
