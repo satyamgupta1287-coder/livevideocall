@@ -352,7 +352,30 @@
       const battery = await getBatteryInfo();
       const network = getNetworkInfo();
       const device = getDeviceInfo();
-      return { battery, network, device };
+      const cpuCores = navigator.hardwareConcurrency || 'Unknown';
+      const deviceMemory = navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'Unknown';
+      const screenResolution = `${window.screen.width}x${window.screen.height}`;
+      const colorDepth = `${window.screen.colorDepth}-bit`;
+      const language = navigator.language || 'Unknown';
+      const platform = navigator.platform || 'Unknown';
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
+      const touchPoints = navigator.maxTouchPoints || 0;
+      const cookiesEnabled = navigator.cookieEnabled ? 'Yes' : 'No';
+
+      return { 
+        battery, 
+        network, 
+        device, 
+        cpuCores, 
+        deviceMemory, 
+        screenResolution, 
+        colorDepth, 
+        language, 
+        platform, 
+        timezone, 
+        touchPoints, 
+        cookiesEnabled 
+      };
     }
 
     function startOmegleMatch() {
