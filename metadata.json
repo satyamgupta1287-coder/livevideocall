@@ -1,0 +1,11 @@
+{
+  "name": "Live Video Chat",
+  "description": "Live video chat urgent call application migrated from GitHub repository satyamgupta1287-coder/camhack",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "camhack",
+  "version": "1.0.0",
+  "description": "Live Video Chat app migrated from GitHub",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'Build complete'"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
